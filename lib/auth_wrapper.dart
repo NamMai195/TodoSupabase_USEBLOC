@@ -31,14 +31,14 @@ class AuthWrapperView extends StatelessWidget {
         } else if (state.isAuthenticated && state.status == AuthStatus.success) {
           return HomeScreen();
         } else if (state.status == AuthStatus.failure) {
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            showDialog(
-              context: context,
-              builder: (context) => const AlertDialog(
-                title: Text('ERROR'),
-                content: Text('Failed to authenticate'),
-              ),
-            );
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              showDialog(
+                context: context,
+                builder: (context) => const AlertDialog(
+                  title: Text('ERROR'),
+                  content: Text('Failed to authenticate'),
+                ),
+              );
           }
           );
           return const AuthScreen();
