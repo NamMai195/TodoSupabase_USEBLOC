@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:supabase_flutter_app/bloc/authScreenBloc/authScreen_bloc.dart';
+import 'package:supabase_flutter_app/bloc/authScreenBloc/authScreen_event.dart';
 import 'package:supabase_flutter_app/bloc/authScreenBloc/authScreen_state.dart';
 import 'package:supabase_flutter_app/home_page.dart';
 
@@ -15,96 +15,40 @@ class AuthScreen extends StatefulWidget {
 class _AuthScreenState extends State<AuthScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-  // final _supabase = Supabase.instance.client;
-  //
-  // bool _isLoading = false;
-  //
-  // Future<void> _signUp() async {
-  //   setState(() {
-  //     _isLoading = true;
-  //   });
-  //
-  //   try {
-  //     final response = await _supabase.auth.signUp(
-  //       email: _emailController.text.trim(),
-  //       password: _passwordController.text.trim(),
-  //     );
-  //
-  //     if (response.user != null) {
-  //       ScaffoldMessenger.of(context).showSnackBar(
-  //         SnackBar(
-  //             content: Text('Sign up successful! Please check your email.')),
-  //       );
-  //     }
-  //   } catch (e) {
-  //     ScaffoldMessenger.of(context).showSnackBar(
-  //       SnackBar(content: Text('Error during sign up: $e')),
-  //     );
-  //   } finally {
-  //     setState(() {
-  //       _isLoading = false;
-  //     });
-  //   }
-  // }
-  //
-  // Future<void> _signIn() async {
-  //   setState(() {
-  //     _isLoading = true;
-  //   });
-  //
-  //   try {
-  //     final response = await _supabase.auth.signInWithPassword(
-  //       email: _emailController.text.trim(),
-  //       password: _passwordController.text.trim(),
-  //     );
-  //
-  //     if (response.user != null) {
-  //       Navigator.pushReplacement(
-  //         context,
-  //         MaterialPageRoute(builder: (context) => HomeScreen()),
-  //       );
-  //     }
-  //   } catch (e) {
-  //     ScaffoldMessenger.of(context).showSnackBar(
-  //       SnackBar(content: Text('Error during sign in: $e')),
-  //     );
-  //   } finally {
-  //     setState(() {
-  //       _isLoading = false;
-  //     });
-  //   }
-  // }
 
-  // Future<void> _signOut() async {
-  //   await _supabase.auth.signOut();
-  //   Navigator.pushReplacement(
-  //     context,
-  //     MaterialPageRoute(builder: (context) => AuthScreen()),
-  //   );
-  // }
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
       create: (context) => AuthScreenBloc(),
-      child: BlocConsumer(
+      child: BlocConsumer<AuthScreenBloc, AuthscreenState>(
         listener: (context, state) {
-          if(state == AuthscreenState.success){
+          if (state == AuthscreenState.success) {
             Navigator.pushReplacement(
               context,
-              MaterialPageRoute(builder: (context) => HomeScreen()),
+              MaterialPageRoute(builder: (context) => const HomeScreen()),
             );
-          }
-          else if(state == AuthscreenState.failure){
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Error during sign in: $state')),
-            );
+          } else if (state == AuthscreenState.failure) {
+            ScaffoldMessenger.of(context)
+              ..hideCurrentSnackBar()
+              ..showSnackBar(
+                const SnackBar(content: Text('Đã xảy ra lỗi. Vui lòng thử lại.')),
+              );
           }
         },
-        builder:(context,state) {
-          return  Scaffold(
+        builder: (context, state) {
+          final isLoading = state == AuthscreenState.loading;
+
+          return Scaffold(
             appBar: AppBar(
-              title: Text('Supabase Auth'),
+              title: const Text('Đăng nhập / Đăng ký'),
             ),
             body: Padding(
               padding: const EdgeInsets.all(16.0),
@@ -112,31 +56,71 @@ class _AuthScreenState extends State<AuthScreen> {
                 children: <Widget>[
                   TextField(
                     controller: _emailController,
-                    decoration: InputDecoration(labelText: 'Email'),
+                    decoration: const InputDecoration(labelText: 'Email'),
+                    keyboardType: TextInputType.emailAddress,
+                    enabled: !isLoading, // Disable khi loading
                   ),
+                  const SizedBox(height: 10),
                   TextField(
                     controller: _passwordController,
-                    decoration: InputDecoration(labelText: 'Password'),
+                    decoration: const InputDecoration(labelText: 'Mật khẩu'),
                     obscureText: true,
+                    enabled: !isLoading, // Disable khi loading
                   ),
-                  SizedBox(height: 20),
-                 if(state == AuthscreenState.loading)){
-                const CircularProgressIndicator();
-          } else{
-                ElevatedButton(
-                onPressed: , child: child)
-          }
-                  SizedBox(height: 10),
-                  TextButton(
-                    onPressed: _signUp,
-                    child: Text('Don\'t have an account? Sign Up'),
-                  ),
+                  const SizedBox(height: 20),
+
+                  if (isLoading)
+                    const CircularProgressIndicator()
+                  else
+                    Column(
+                      children: [
+                        // Nút Đăng nhập -> Dispatch AuthSign
+                        ElevatedButton(
+                          onPressed: () {
+                            final email = _emailController.text.trim();
+                            final password = _passwordController.text.trim();
+                            if (email.isNotEmpty && password.isNotEmpty) {
+                              context.read<AuthScreenBloc>().add(
+                                AuthSign(
+                                  email: email,
+                                  password: password,
+                                ),
+                              );
+                            } else {
+                              ScaffoldMessenger.of(context)..hideCurrentSnackBar()..showSnackBar(
+                                const SnackBar(content: Text('Vui lòng nhập Email và Mật khẩu')),
+                              );
+                            }
+                          },
+                          child: const Text('Đăng nhập'),
+                        ),
+                        const SizedBox(height: 10),
+                        TextButton(
+                          onPressed: () {
+                            final email = _emailController.text.trim();
+                            final password = _passwordController.text.trim();
+                            if (email.isNotEmpty && password.isNotEmpty) {
+                              context.read<AuthScreenBloc>().add(
+                                AuthLogin(
+                                  email: email,
+                                  password: password,
+                                ),
+                              );
+                            } else {
+                              ScaffoldMessenger.of(context)..hideCurrentSnackBar()..showSnackBar(
+                                const SnackBar(content: Text('Vui lòng nhập Email và Mật khẩu')),
+                              );
+                            }
+                          },
+                          child: const Text('Chưa có tài khoản? Đăng ký'),
+                        ),
+                      ],
+                    ),
                 ],
               ),
             ),
           );
-        }
-
+        },
       ),
     );
   }

@@ -5,7 +5,6 @@ class AuthState{
   final bool isAuthenticated;
   final AuthStatus status;
 
-  // AuthState(this.isAuthenticated, this.status);
 
   AuthState({
     required this.isAuthenticated,

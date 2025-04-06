@@ -16,15 +16,15 @@ class MyApp extends StatelessWidget {
     return MultiBlocProvider(
       providers: [
         BlocProvider<AuthBloc>(
-          create: (context) => AuthBloc()..add(AuthCheck()), // Khởi tạo AuthBloc và gọi AuthCheck
+          create: (context) => AuthBloc()..add(AuthCheck()),
         ),
         BlocProvider<AuthScreenBloc>(
-          create: (context) => AuthScreenBloc(), // Khởi tạo AuthScreenBloc
+          create: (context) => AuthScreenBloc(),
         ),
       ],
       child: MaterialApp(
         title: 'My App',
-        home: const AuthWrapper(), // Sử dụng AuthWrapper làm màn hình khởi động
+        home: const AuthWrapper(),
       ),
     );
   }

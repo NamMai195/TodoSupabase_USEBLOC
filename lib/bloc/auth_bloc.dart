@@ -4,7 +4,7 @@ import 'package:supabase_flutter_app/bloc/auth_event.dart';
 import 'package:supabase_flutter_app/bloc/auth_state.dart';
 
 class AuthBloc extends Bloc<AuthEvent, AuthState> {
-  bool _isFirstCheck = true; // Add a flag to track the first check
+  bool _isFirstCheck = true;
 
   AuthBloc() : super(AuthState(isAuthenticated: false, status: AuthStatus.initial)) {
     on<AuthCheck>(_onAuthCheck);
@@ -26,7 +26,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
           isAuthenticated: false,
           status: AuthStatus.one,
         ));
-        _isFirstCheck = false; // Set flag to false after the first check.
+        _isFirstCheck = false;
       } else {
         emit(state.copyWith(
           isAuthenticated: false,

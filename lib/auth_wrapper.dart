@@ -43,8 +43,7 @@ class AuthWrapperView extends StatelessWidget {
           );
           return const AuthScreen();
         }
-        // Thêm xử lý cho các trạng thái khác nếu cần thiết
-        return const AuthScreen(); // Trả về AuthScreen khi không có lỗi hay loading hoặc success
+        return const AuthScreen();
       },
     );
   }
