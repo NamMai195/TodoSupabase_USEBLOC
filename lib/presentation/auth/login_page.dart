@@ -3,19 +3,22 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:supabase_flutter_app/bloc/auth/login/login_bloc.dart';
 import 'package:supabase_flutter_app/bloc/auth/login/login_event.dart';
 import 'package:supabase_flutter_app/bloc/auth/login/login_state.dart';
-import 'package:supabase_flutter_app/home_page.dart';
+import 'package:supabase_flutter_app/presentation/home/home_page.dart';
+// import 'package:supabase_flutter_app/presentation/auth/signup_page.dart'; // Import trang signup khi có
 
-class AuthScreen extends StatefulWidget {
-  const AuthScreen({super.key});
+// 1. Đổi tên class thành LoginPage
+class LoginPage extends StatefulWidget {
+  const LoginPage({super.key});
 
   @override
-  _AuthScreenState createState() => _AuthScreenState();
+  // 2. Đổi tên State tương ứng
+  _LoginPageState createState() => _LoginPageState();
 }
 
-class _AuthScreenState extends State<AuthScreen> {
+// 3. Đổi tên State và kế thừa từ State<LoginPage>
+class _LoginPageState extends State<LoginPage> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-
 
   @override
   void dispose() {
@@ -26,6 +29,7 @@ class _AuthScreenState extends State<AuthScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Cung cấp LoginBloc cục bộ cho màn hình này
     return BlocProvider(
       create: (context) => LoginBloc(),
       child: BlocConsumer<LoginBloc, LoginState>(
@@ -39,7 +43,7 @@ class _AuthScreenState extends State<AuthScreen> {
             ScaffoldMessenger.of(context)
               ..hideCurrentSnackBar()
               ..showSnackBar(
-                const SnackBar(content: Text('Đã xảy ra lỗi. Vui lòng thử lại.')),
+                const SnackBar(content: Text('Đăng nhập thất bại. Vui lòng kiểm tra lại.')),
               );
           }
         },
@@ -48,7 +52,7 @@ class _AuthScreenState extends State<AuthScreen> {
 
           return Scaffold(
             appBar: AppBar(
-              title: const Text('Đăng nhập / Đăng ký'),
+              title: const Text('Đăng nhập'), // Giữ nguyên title
             ),
             body: Padding(
               padding: const EdgeInsets.all(16.0),
@@ -59,14 +63,14 @@ class _AuthScreenState extends State<AuthScreen> {
                     controller: _emailController,
                     decoration: const InputDecoration(labelText: 'Email'),
                     keyboardType: TextInputType.emailAddress,
-                    enabled: !isLoading, // Disable khi loading
+                    enabled: !isLoading,
                   ),
                   const SizedBox(height: 10),
                   TextField(
                     controller: _passwordController,
                     decoration: const InputDecoration(labelText: 'Mật khẩu'),
                     obscureText: true,
-                    enabled: !isLoading, // Disable khi loading
+                    enabled: !isLoading,
                   ),
                   const SizedBox(height: 20),
 
@@ -76,7 +80,7 @@ class _AuthScreenState extends State<AuthScreen> {
                     Column(
                       children: [
                         ElevatedButton(
-                          onPressed: () {
+                          onPressed: isLoading ? null : () {
                             final email = _emailController.text.trim();
                             final password = _passwordController.text.trim();
                             if (email.isNotEmpty && password.isNotEmpty) {
@@ -95,26 +99,17 @@ class _AuthScreenState extends State<AuthScreen> {
                           child: const Text('Đăng nhập'),
                         ),
                         const SizedBox(height: 10),
-                        // Nút Đăng ký -> Dispatch AuthLogin
-                        // TextButton(
-                        //   onPressed: () {
-                        //     final email = _emailController.text.trim();
-                        //     final password = _passwordController.text.trim();
-                        //     if (email.isNotEmpty && password.isNotEmpty) {
-                        //       context.read<AuthScreenBloc>().add(
-                        //         AuthLogin(
-                        //           email: email,
-                        //           password: password,
-                        //         ),
-                        //       );
-                        //     } else {
-                        //       ScaffoldMessenger.of(context)..hideCurrentSnackBar()..showSnackBar(
-                        //         const SnackBar(content: Text('Vui lòng nhập Email và Mật khẩu')),
-                        //       );
-                        //     }
-                        //   },
-                        //   child: const Text('Chưa có tài khoản? Đăng ký'),
-                        // ),
+                        // Nút điều hướng sang trang Đăng ký
+                        TextButton(
+                          onPressed: isLoading ? null : () {
+                            // TODO: Thêm logic điều hướng đến trang Đăng ký (SignupPage)
+                            // Ví dụ: Navigator.pushNamed(context, '/signup');
+                            ScaffoldMessenger.of(context)..hideCurrentSnackBar()..showSnackBar(
+                              const SnackBar(content: Text('Điều hướng sang trang Đăng ký...')),
+                            ); // Tạm thời thông báo
+                          },
+                          child: const Text('Chưa có tài khoản? Đăng ký'),
+                        ),
                       ],
                     ),
                 ],

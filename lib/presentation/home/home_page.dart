@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:supabase_flutter_app/auth_page.dart';
+import 'package:supabase_flutter_app/presentation/auth/login_page.dart';
 import 'package:supabase_flutter_app/models/todo.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -16,9 +16,8 @@ class _HomeScreenState extends State<HomeScreen> {
   List<Todo> _todos = [];
   bool _isLoading = false;
 
-  // Filter and sort options
-  String _filterBy = 'all'; // 'all', 'completed', 'incomplete'
-  String _sortBy = 'newest'; // 'newest', 'oldest'
+  String _filterBy = 'all';
+  String _sortBy = 'newest';
 
   @override
   void initState() {
@@ -159,7 +158,7 @@ class _HomeScreenState extends State<HomeScreen> {
               await _supabase.auth.signOut();
               Navigator.pushReplacement(
                 context,
-                MaterialPageRoute(builder: (context) => AuthScreen()),
+                MaterialPageRoute(builder: (context) => LoginPage()),
               );
             },
           ),

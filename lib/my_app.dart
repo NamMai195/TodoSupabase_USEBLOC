@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:supabase_flutter_app/auth_wrapper.dart';
+import 'package:supabase_flutter_app/presentation/auth/widgets/auth_wrapper.dart';
 import 'package:supabase_flutter_app/bloc/auth/session/session_bloc.dart';
 import 'package:supabase_flutter_app/bloc/auth/session/session_event.dart';
 
@@ -16,6 +16,7 @@ class MyApp extends StatelessWidget {
         ),
       ],
       child: MaterialApp(
+        debugShowCheckedModeBanner: false,
         title: 'My App',
         home: const AuthWrapper(),
       ),
