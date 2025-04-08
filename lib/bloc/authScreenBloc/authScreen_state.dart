@@ -1,1 +1,0 @@
-enum AuthscreenState { initial, loading, success, failure }

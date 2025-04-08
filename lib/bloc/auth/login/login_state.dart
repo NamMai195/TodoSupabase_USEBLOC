@@ -1,0 +1,1 @@
+enum LoginState { initial, loading, success, failure }
