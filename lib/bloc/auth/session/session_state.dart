@@ -3,6 +3,7 @@ enum SessionStatus {
   loading,
   success,
   failure,
+  one
 }
 
 class SessionState {

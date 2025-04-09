@@ -24,7 +24,7 @@ class SessionBloc extends Bloc<SessionEvent, SessionState> {
       if (_isFirstCheck) {
         emit(state.copyWith(
           isAuthenticated: false,
-          status: SessionStatus.success,
+          status: SessionStatus.one,
         ));
         _isFirstCheck = false;
       } else {
