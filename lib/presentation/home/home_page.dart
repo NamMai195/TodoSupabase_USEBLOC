@@ -26,80 +26,106 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _fetchTodos() async {
-    setState(() {
-      _isLoading = true;
-    });
+    if (mounted) {
+      setState(() {
+        _isLoading = true;
+      });
+    } else {
+      return;
+    }
 
     try {
-      // Base query
-      var query = _supabase
-          .from('todos')
-          .select()
-          .eq('user_id', _supabase.auth.currentUser!.id);
-
-      // Apply filter
-      if (_filterBy == 'completed') {
-        query = query.eq('is_completed', true);
-      } else if (_filterBy == 'incomplete') {
-        query = query.eq('is_completed', false);
+      final userId = _supabase.auth.currentUser?.id;
+      if (userId == null) {
+        throw 'Người dùng chưa đăng nhập';
       }
 
-      // Apply sort
+      var query = _supabase.from('todos').select().eq('user_id', userId);
+
+      if (_filterBy == 'completed') {
+        query = query.eq('status', 'completed');
+      } else if (_filterBy == 'incomplete') {
+        query = query.neq('status', 'completed');
+      }
+
       final finalQuery = _sortBy == 'newest'
           ? query.order('created_at', ascending: false)
           : query.order('created_at', ascending: true);
 
       final response = await finalQuery;
 
-      setState(() {
-        _todos = (response as List).map((todo) => Todo.fromJson(todo)).toList();
-      });
+      if (response == null) {
+        throw 'Không thể tải danh sách công việc.';
+      }
+
+      if (mounted) {
+        setState(() {
+          _todos =
+              (response as List).map((todo) => Todo.fromJson(todo)).toList();
+        });
+      }
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error fetching todos: $e')),
       );
+      if (mounted) {
+        setState(() {
+          _todos = [];
+        });
+      }
     } finally {
-      setState(() {
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 
   Future<void> _addTodo() async {
     if (_taskController.text.isEmpty) return;
+    final userId = _supabase.auth.currentUser?.id;
 
-    setState(() {
-      _isLoading = true;
-    });
+    if (userId == null) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Vui lòng đăng nhập')),
+        );
+      }
+      return;
+    }
 
     try {
       await _supabase.from('todos').insert({
-        'user_id': _supabase.auth.currentUser!.id,
+        'user_id': userId,
         'task': _taskController.text.trim(),
-        'is_completed': false,
+        'status': 'pending',
       });
 
       _taskController.clear();
       _fetchTodos();
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error adding todo: $e')),
       );
-    } finally {
-      setState(() {
-        _isLoading = false;
-      });
     }
   }
 
   Future<void> _toggleTodoCompletion(Todo todo) async {
+    final userId = _supabase.auth.currentUser?.id;
+    if (userId == null || userId != todo.userId) return;
+
     try {
+      final newStatus = todo.status == 'completed' ? 'pending' : 'completed';
       await _supabase
           .from('todos')
-          .update({'is_completed': !todo.isCompleted}).eq('id', todo.id);
+          .update({'status': newStatus}).eq('id', todo.id);
 
       _fetchTodos();
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error updating todo: $e')),
       );
@@ -107,10 +133,14 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _deleteTodo(String id) async {
+    final userId = _supabase.auth.currentUser?.id;
+    if (userId == null) return;
+
     try {
       await _supabase.from('todos').delete().eq('id', id);
       _fetchTodos();
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error deleting todo: $e')),
       );
@@ -118,12 +148,18 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   @override
+  void dispose() {
+    _taskController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.grey[900],
       appBar: AppBar(
-        title: Text('To-Do List'),
+        title: const Text('To-Do List'),
         actions: [
-          // Filter dropdown
           DropdownButton<String>(
             value: _filterBy,
             onChanged: (value) {
@@ -132,13 +168,12 @@ class _HomeScreenState extends State<HomeScreen> {
                 _fetchTodos();
               });
             },
-            items: [
+            items: const [
               DropdownMenuItem(value: 'all', child: Text('All')),
               DropdownMenuItem(value: 'completed', child: Text('Completed')),
               DropdownMenuItem(value: 'incomplete', child: Text('Incomplete')),
             ],
           ),
-          // Sort dropdown
           DropdownButton<String>(
             value: _sortBy,
             onChanged: (value) {
@@ -147,25 +182,26 @@ class _HomeScreenState extends State<HomeScreen> {
                 _fetchTodos();
               });
             },
-            items: [
+            items: const [
               DropdownMenuItem(value: 'newest', child: Text('Newest First')),
               DropdownMenuItem(value: 'oldest', child: Text('Oldest First')),
             ],
           ),
           IconButton(
-            icon: Icon(Icons.logout),
+            icon: const Icon(Icons.logout),
             onPressed: () async {
               await _supabase.auth.signOut();
+              if (!mounted) return;
               Navigator.pushReplacement(
                 context,
-                MaterialPageRoute(builder: (context) => LoginPage()),
+                MaterialPageRoute(builder: (context) => const LoginPage()),
               );
             },
           ),
         ],
       ),
       body: _isLoading
-          ? Center(child: CircularProgressIndicator())
+          ? const Center(child: CircularProgressIndicator())
           : Column(
               children: [
                 Padding(
@@ -175,11 +211,12 @@ class _HomeScreenState extends State<HomeScreen> {
                       Expanded(
                         child: TextField(
                           controller: _taskController,
-                          decoration: InputDecoration(labelText: 'New Task'),
+                          decoration:
+                              const InputDecoration(labelText: 'New Task'),
                         ),
                       ),
                       IconButton(
-                        icon: Icon(Icons.add),
+                        icon: const Icon(Icons.add),
                         onPressed: _addTodo,
                       ),
                     ],
@@ -197,7 +234,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           onChanged: (value) => _toggleTodoCompletion(todo),
                         ),
                         trailing: IconButton(
-                          icon: Icon(Icons.delete),
+                          icon: const Icon(Icons.delete),
                           onPressed: () => _deleteTodo(todo.id),
                         ),
                       );
