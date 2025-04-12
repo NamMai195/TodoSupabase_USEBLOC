@@ -1,5 +1,6 @@
 import 'package:equatable/equatable.dart';
 
+//dung Equatable
 abstract class PasswordResetEvent extends Equatable {
   const PasswordResetEvent();
   @override

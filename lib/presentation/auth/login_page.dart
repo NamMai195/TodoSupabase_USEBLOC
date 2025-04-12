@@ -3,6 +3,10 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:supabase_flutter_app/bloc/auth/login/login_bloc.dart';
 import 'package:supabase_flutter_app/bloc/auth/login/login_event.dart';
 import 'package:supabase_flutter_app/bloc/auth/login/login_state.dart';
+// Import PasswordReset Bloc, Event, State
+import 'package:supabase_flutter_app/bloc/auth/password_reset/password_reset_bloc.dart';
+import 'package:supabase_flutter_app/bloc/auth/password_reset/password_reset_event.dart';
+// Import các Pages
 import 'package:supabase_flutter_app/presentation/auth/verification_code_page.dart';
 import 'package:supabase_flutter_app/presentation/home/home_page.dart';
 import 'package:supabase_flutter_app/presentation/auth/signup_page.dart';
@@ -19,17 +23,24 @@ class _LoginPageState extends State<LoginPage> {
   final _passwordController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
   bool _isPasswordObscured = true;
+  // Controller riêng cho dialog quên mật khẩu
+  final _emailResetController = TextEditingController();
+
   @override
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
+    _emailResetController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (context) => LoginBloc(),
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider(create: (context) => LoginBloc()),
+        BlocProvider(create: (context) => PasswordResetBloc()),
+      ],
       child: BlocConsumer<LoginBloc, LoginState>(
         listener: (context, state) {
           if (state == LoginState.success) {
@@ -43,7 +54,7 @@ class _LoginPageState extends State<LoginPage> {
               ..showSnackBar(
                 const SnackBar(
                     content:
-                        Text('Đăng nhập thất bại. Vui lòng kiểm tra lại.')),
+                    Text('Đăng nhập thất bại. Vui lòng kiểm tra lại.')),
               );
           }
         },
@@ -72,11 +83,11 @@ class _LoginPageState extends State<LoginPage> {
       final email = _emailController.text.trim();
       final password = _passwordController.text.trim();
       context.read<LoginBloc>().add(
-            LoginRequested(
-              email: email,
-              password: password,
-            ),
-          );
+        LoginRequested(
+          email: email,
+          password: password,
+        ),
+      );
     } else {
       ScaffoldMessenger.of(context)
         ..hideCurrentSnackBar()
@@ -153,6 +164,7 @@ class _LoginPageState extends State<LoginPage> {
               onFieldSubmitted: (_) => _submitLogin(context, isLoading),
             ),
             const SizedBox(height: 24.0),
+
             if (isLoading)
               const Padding(
                 padding: EdgeInsets.symmetric(vertical: 16.0),
@@ -166,14 +178,14 @@ class _LoginPageState extends State<LoginPage> {
                     style: ElevatedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 16.0),
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12.0), // Bo góc
+                        borderRadius: BorderRadius.circular(12.0),
                       ),
                       backgroundColor: Theme.of(context).colorScheme.primary,
                       foregroundColor: Theme.of(context).colorScheme.onPrimary,
                     ),
                     onPressed: () => _submitLogin(context, isLoading),
                     child:
-                        const Text('Đăng nhập', style: TextStyle(fontSize: 16)),
+                    const Text('Đăng nhập', style: TextStyle(fontSize: 16)),
                   ),
                   const SizedBox(height: 12.0),
                   Align(
@@ -185,29 +197,85 @@ class _LoginPageState extends State<LoginPage> {
                           onPressed: isLoading
                               ? null
                               : () {
-                                  Navigator.pushReplacement(
-                                    context,
-                                    MaterialPageRoute(
-                                        builder: (context) =>
-                                            const SignupPage()),
-                                  );
-                                },
-                          icon: Icon(Icons.person_add),
-                          label: Text('Đăng ký'),
+                            Navigator.pushReplacement(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) =>
+                                  const SignupPage()),
+                            );
+                          },
+                          icon: const Icon(Icons.person_add),
+                          label: const Text('Đăng ký'),
                         ),
                         TextButton.icon(
-                          onPressed: isLoading
-                              ? null
-                              : () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                        builder: (context) =>
-                                            const VerificationCodePage()),
-                                  );
-                                },
-                          icon: Icon(Icons.help_outline),
-                          label: Text('Quen mật khẩu?'),
+                          onPressed: () {
+                            _emailResetController.clear();
+                            showDialog(
+                              context: context,
+                              builder: (dialogContext) {
+                                return AlertDialog(
+                                  title: const Text('Quên Mật Khẩu'),
+                                  content: TextField(
+                                    controller: _emailResetController,
+                                    keyboardType: TextInputType.emailAddress,
+                                    decoration: const InputDecoration(
+                                      hintText: 'Nhập email của bạn',
+                                      labelText: 'Email',
+                                    ),
+                                    autofocus: true,
+                                  ),
+                                  actions: <Widget>[
+                                    TextButton(
+                                      child: const Text('Hủy'),
+                                      onPressed: () {
+                                        Navigator.of(dialogContext).pop();
+                                      },
+                                    ),
+                                    TextButton(
+                                      child: const Text('Gửi'),
+                                      onPressed: () {
+                                        final email = _emailResetController.text.trim();
+                                        if (email.isNotEmpty && email.contains('@')) {
+                                          Navigator.of(dialogContext).pop();
+                                          context.read<PasswordResetBloc>().add(
+                                              PasswordResetSendOtpRequested(email: email)
+                                          );
+
+                                          ScaffoldMessenger.of(context)
+                                            ..hideCurrentSnackBar()
+                                            ..showSnackBar(
+                                              SnackBar(
+                                                content: Text(
+                                                    'Đang gửi yêu cầu tới $email...'),
+                                                duration: Duration(seconds: 2),
+                                              ),
+                                            );
+
+                                          Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (_) => BlocProvider.value(
+                                                value: BlocProvider.of<PasswordResetBloc>(context),
+                                                child: VerificationCodePage(email: email),
+                                              ),
+                                            ),
+                                          );
+                                        } else {
+                                          ScaffoldMessenger.of(dialogContext)
+                                            ..hideCurrentSnackBar()
+                                            ..showSnackBar(
+                                              const SnackBar(content: Text('Vui lòng nhập email hợp lệ')),
+                                            );
+                                        }
+                                      },
+                                    ),
+                                  ],
+                                );
+                              },
+                            );
+                          },
+                          icon: const Icon(Icons.help_outline),
+                          label: const Text('Quên mật khẩu?'),
                         ),
                       ],
                     ),
