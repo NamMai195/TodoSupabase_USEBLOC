@@ -15,6 +15,7 @@ class TodoBloc extends Bloc<TodoEvent, TodoState> {
     on<TodoDeleted>(_onTodoDeleted);
     on<FilterUpdated>(_onFilterUpdated);
     on<SortUpdated>(_onSortUpdated);
+    on<TodoUpdated>(_onTodoUpdated);
   }
 
 // xử lý sự kiện lấy danh sách công việc
@@ -131,6 +132,28 @@ class TodoBloc extends Bloc<TodoEvent, TodoState> {
       add(TodosFetched());
     } else {
       add(TodosFetched());
+    }
+  }
+
+  //Update
+  Future<void> _onTodoUpdated(
+      TodoUpdated event,
+      Emitter<TodoState> emit,
+      ) async {
+    try {
+      final userId = _supabaseClient.auth.currentUser?.id;
+      if (userId == null) return;
+      if (event.newTask.trim().isEmpty) return;
+
+      await _supabaseClient
+          .from('todos')
+          .update({'task': event.newTask.trim()})
+          .eq('id', event.id)
+          .eq('user_id', userId);
+
+      add(TodosFetched());
+    } catch (e) {
+      print('Error updating todo: $e');
     }
   }
 }

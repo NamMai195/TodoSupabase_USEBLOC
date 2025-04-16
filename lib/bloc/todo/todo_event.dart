@@ -55,3 +55,12 @@ class SortUpdated extends TodoEvent {
   @override
   List<Object> get props => [sort];
 }
+//update
+class TodoUpdated extends TodoEvent {
+  final String id;
+  final String newTask;
+  const TodoUpdated({required this.id, required this.newTask});
+
+  @override
+  List<Object> get props => [id, newTask];
+}
