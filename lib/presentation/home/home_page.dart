@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:lottie/lottie.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:supabase_flutter_app/bloc/todo/todo_bloc.dart';
 import 'package:supabase_flutter_app/bloc/todo/todo_event.dart';
 import 'package:supabase_flutter_app/bloc/todo/todo_state.dart';
 import 'package:supabase_flutter_app/presentation/auth/login_page.dart';
 import 'package:supabase_flutter_app/models/todo.dart';
-
+import 'package:lottie/lottie.dart';
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -230,7 +231,13 @@ class _HomeScreenState extends State<HomeScreen> {
           builder: (context, state) {
             // --- Trường hợp đang tải ---
             if (state is TodoLoadInProgress || state is TodoInitial) {
-              return const Center(child: CircularProgressIndicator());
+              return Center(
+                child: LottieBuilder.asset(
+                  'assets/animations/loading.json',
+                  width: 80,
+                  height: 80,
+                ),
+              );
             }
             // --- Trường hợp tải lỗi ---
             if (state is TodoLoadFailure) {
@@ -288,18 +295,16 @@ class _HomeScreenState extends State<HomeScreen> {
                           leading: Checkbox(
                             value: todo.isCompleted,
                             onChanged: (value) {
-                              // Gửi event ToggleTodo đến BLoC
                               context.read<TodoBloc>().add(TodoToggled(todo: todo));
                             },
                           ),
-                          trailing: Row( // Dùng Row để chứa nhiều nút
-                            mainAxisSize: MainAxisSize.min, // Để Row chỉ chiếm đủ không gian cần thiết
+                          trailing: Row(
+                            mainAxisSize: MainAxisSize.min,
                             children: [
                               // --- Nút Sửa ---
                               IconButton(
-                                icon: const Icon(Icons.edit, color: Colors.blue), // Icon sửa
+                                icon: const Icon(Icons.edit, color: Colors.blue),
                                 onPressed: () {
-                                  // Hiện dialog để sửa task
                                   _showEditTodoDialog(context, todo);
                                 },
                               ),
@@ -307,7 +312,6 @@ class _HomeScreenState extends State<HomeScreen> {
                               IconButton(
                                 icon: const Icon(Icons.delete, color: Colors.redAccent),
                                 onPressed: () {
-                                  // Xác nhận trước khi xóa (tùy chọn)
                                   showDialog(
                                     context: context,
                                     builder: (dialogContext) => AlertDialog(
@@ -328,7 +332,6 @@ class _HomeScreenState extends State<HomeScreen> {
                                       ],
                                     ),
                                   );
-                                  // context.read<TodoBloc>().add(TodoDeleted(id: todo.id)); // Hoặc xóa trực tiếp
                                 },
                               ),
                             ],

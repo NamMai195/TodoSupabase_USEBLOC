@@ -1,6 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:supabase_flutter_app/models/todo.dart'; // Import model
+import 'package:supabase_flutter_app/models/todo.dart';
 import 'todo_event.dart';
 import 'todo_state.dart';
 
