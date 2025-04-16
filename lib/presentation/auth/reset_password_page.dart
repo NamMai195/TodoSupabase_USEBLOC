@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:lottie/lottie.dart'; // Thêm import Lottie
 import 'package:supabase_flutter_app/bloc/auth/password_reset/password_reset_event.dart';
 import 'package:supabase_flutter_app/bloc/auth/password_reset/password_reset_state.dart';
 import '../../bloc/auth/password_reset/password_reset_bloc.dart';
@@ -83,10 +84,6 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         foregroundColor: Colors.white,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
-        ),
       ),
       body: BlocListener<PasswordResetBloc, PasswordResetState>(
         listener: (context, state) {
@@ -96,66 +93,64 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
             _handleSuccess();
           }
         },
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
-          child: Form(
-            key: _formKey,
-            child: Center(
-              child: SingleChildScrollView(
+        child: SafeArea(
+          child: Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
+              child: Form(
+                key: _formKey,
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
+                    Center(
+                      child: Lottie.asset(
+                        'assets/animations/reset_pass.json',
+                        height: 120,
+                      ),
+                    ),
+                    const SizedBox(height: 30),
                     Text(
                       'Nhập mật khẩu mới cho tài khoản:',
                       textAlign: TextAlign.center,
-                      style: textTheme.titleMedium?.copyWith(color: Colors.grey[400]),
+                      style: textTheme.titleMedium?.copyWith(color: Colors.grey[300]),
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 8),
                     Text(
                       widget.email,
                       textAlign: TextAlign.center,
-                      style: textTheme.titleMedium?.copyWith(color: Colors.white, fontWeight: FontWeight.bold),
+                      style: textTheme.titleLarge?.copyWith(color: Colors.white, fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 30),
-
                     _buildPasswordField(
                       controller: _passwordController,
                       labelText: 'Mật khẩu mới',
                       obscureText: _obscurePassword,
                       toggleObscure: () => setState(() => _obscurePassword = !_obscurePassword),
                       validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Vui lòng nhập mật khẩu mới';
-                        }
-                        if (value.length < 6) {
-                          return 'Mật khẩu phải có ít nhất 6 ký tự';
-                        }
+                        if (value == null || value.isEmpty) return 'Vui lòng nhập mật khẩu mới';
+                        if (value.length < 6) return 'Mật khẩu phải có ít nhất 6 ký tự';
                         return null;
                       },
                     ),
-                    const SizedBox(height: 20),
-
+                    const SizedBox(height: 16.0),
                     _buildPasswordField(
                       controller: _confirmPasswordController,
                       labelText: 'Xác nhận mật khẩu mới',
                       obscureText: _obscureConfirmPassword,
                       toggleObscure: () => setState(() => _obscureConfirmPassword = !_obscureConfirmPassword),
                       validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Vui lòng xác nhận mật khẩu';
-                        }
-                        if (value != _passwordController.text) {
-                          return 'Mật khẩu xác nhận không khớp';
-                        }
+                        if (value == null || value.isEmpty) return 'Vui lòng xác nhận mật khẩu';
+                        if (value != _passwordController.text) return 'Mật khẩu xác nhận không khớp';
                         return null;
                       },
                     ),
                     const SizedBox(height: 40),
+
                     BlocBuilder<PasswordResetBloc, PasswordResetState>(
                       builder: (context, state) {
                         final isLoading = state is PasswordResetSubmitting;
-                        return ElevatedButton.icon(
+                        return ElevatedButton(
                           style: ElevatedButton.styleFrom(
                             backgroundColor: colorScheme.primary,
                             foregroundColor: colorScheme.onPrimary,
@@ -163,20 +158,17 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12.0),
                             ),
-                            textStyle: textTheme.titleMedium,
+                            textStyle: textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
                           ),
                           onPressed: isLoading ? null : _onSubmitNewPassword,
-                          icon: isLoading
-                              ? Container(
-                            width: 20,
-                            height: 20,
-                            child: const CircularProgressIndicator(
-                              color: Colors.white,
-                              strokeWidth: 2,
+                          child: isLoading
+                              ? SizedBox(
+                            height: 24,
+                            child: Lottie.asset(
+                              'assets/animations/loading.json',
                             ),
                           )
-                              : const Icon(Icons.save),
-                          label: const Text('Lưu mật khẩu mới'),
+                              : const Text('Lưu mật khẩu mới'),
                         );
                       },
                     ),
@@ -205,6 +197,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
       decoration: InputDecoration(
         labelText: labelText,
         labelStyle: TextStyle(color: Colors.grey[400]),
+        hintText: 'Nhập tại đây...',
         hintStyle: TextStyle(color: Colors.grey[600]),
         prefixIcon: Icon(Icons.lock_outline, color: Colors.grey[400]),
         enabledBorder: OutlineInputBorder(
@@ -220,7 +213,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
           borderRadius: BorderRadius.circular(12.0),
         ),
         focusedErrorBorder: OutlineInputBorder(
-          borderSide: BorderSide(color: Theme.of(context).colorScheme.error, width: 2),
+          borderSide: BorderSide(color: Theme.of(context).colorScheme.error, width: 1.5),
           borderRadius: BorderRadius.circular(12.0),
         ),
         errorStyle: TextStyle(color: Theme.of(context).colorScheme.error),

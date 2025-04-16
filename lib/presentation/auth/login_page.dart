@@ -22,7 +22,6 @@ class _LoginPageState extends State<LoginPage> {
   final _passwordController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
   bool _isPasswordObscured = true;
-  // Controller riêng cho dialog quên mật khẩu
   final _emailResetController = TextEditingController();
 
   @override
