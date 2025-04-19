@@ -21,11 +21,6 @@
   - Khôi phục mật khẩu
   - Quản lý thông tin cá nhân
 
-- 🔄 **Đồng bộ hóa**
-  - Tự động đồng bộ dữ liệu giữa các thiết bị
-  - Hoạt động offline với đồng bộ tự động khi có mạng
-  - Thông báo thời gian thực khi có cập nhật
-
 ## 🛠️ Công nghệ sử dụng
 
 - **Frontend**: Flutter SDK
