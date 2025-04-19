@@ -64,3 +64,11 @@ class TodoUpdated extends TodoEvent {
   @override
   List<Object> get props => [id, newTask];
 }
+class SearchQueryChanged extends TodoEvent {
+  final String query;
+
+  const SearchQueryChanged({required this.query});
+
+  @override
+  List<Object> get props => [query];
+}

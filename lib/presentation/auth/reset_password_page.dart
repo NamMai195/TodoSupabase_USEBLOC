@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:lottie/lottie.dart'; // Thêm import Lottie
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:supabase_flutter_app/bloc/auth/password_reset/password_reset_event.dart';
 import 'package:supabase_flutter_app/bloc/auth/password_reset/password_reset_state.dart';
 import '../../bloc/auth/password_reset/password_reset_bloc.dart';
@@ -25,6 +26,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
   void dispose() {
     _passwordController.dispose();
     _confirmPasswordController.dispose();
+    Supabase.instance.client.auth.signOut();
     super.dispose();
   }
 

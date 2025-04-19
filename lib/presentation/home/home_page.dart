@@ -251,32 +251,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 children: [
                   Padding(
                     padding: const EdgeInsets.all(16.0),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: TextField(
-                            controller: _taskController,
-                            decoration: const InputDecoration(labelText: 'New Task'),
-                            onSubmitted: (value) {
-                              if (value.isNotEmpty) {
-                                context.read<TodoBloc>().add(TodoAdded(task: value));
-                                _taskController.clear();
-                              }
-                            },
-                          ),
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.add),
-                          onPressed: () {
-                            final task = _taskController.text.trim();
-                            if (task.isNotEmpty) {
-                              context.read<TodoBloc>().add(TodoAdded(task: task));
-                              _taskController.clear();
-                            }
-                          },
-                        ),
-                      ],
-                    ),
                   ),
                   // --- Phần danh sách Todos ---
                   Expanded(
@@ -346,7 +320,7 @@ class _HomeScreenState extends State<HomeScreen> {
             return const Center(child: Text('Trạng thái không xác định'));
           },
         ),
-        bottomNavigationBar: IconButton(onPressed: (){}, icon: Icon(Icons.ice_skating_outlined)),
+        floatingActionButton:_buildFab(context),
       ),
     );
   }
@@ -386,6 +360,55 @@ void _showEditTodoDialog(BuildContext context, Todo todo) {
     },
   ).then((_) {
   });
+}
+
+Widget _buildFab(BuildContext context) {
+  return FloatingActionButton(
+    onPressed: () => _showAddTaskDialog(context),
+    tooltip: 'Thêm công việc mới',
+    child: const Icon(Icons.add),
+    // backgroundColor: Colors.pinkAccent, // Màu nhấn
+  );
+}
+void _showAddTaskDialog(BuildContext context) {
+  final TextEditingController dialogTaskController = TextEditingController();
+  showDialog(
+    context: context,
+    builder: (dialogContext) {
+      return AlertDialog(
+        title: const Text('Thêm công việc mới'),
+        content: TextField(
+          controller: dialogTaskController,
+          autofocus: true,
+          decoration: const InputDecoration(hintText: 'Nhập nội dung công việc'),
+          onSubmitted: (value) { // Cho phép nhấn Enter để thêm
+            final task = dialogTaskController.text.trim();
+            if (task.isNotEmpty) {
+              // Dùng context gốc (của HomeScreen) để đọc Bloc
+              context.read<TodoBloc>().add(TodoAdded(task: task));
+              Navigator.pop(dialogContext); // Đóng dialog sau khi thêm
+            }
+          },
+        ),
+        actions: <Widget>[
+          TextButton(
+            child: const Text('Hủy'),
+            onPressed: () => Navigator.pop(dialogContext),
+          ),
+          TextButton(
+            child: const Text('Thêm'),
+            onPressed: () {
+              final task = dialogTaskController.text.trim();
+              if (task.isNotEmpty) {
+                context.read<TodoBloc>().add(TodoAdded(task: task));
+                Navigator.pop(dialogContext);
+              }
+            },
+          ),
+        ],
+      );
+    },
+  );
 }
 
 // Hàm tách ra để xử lý việc lưu
