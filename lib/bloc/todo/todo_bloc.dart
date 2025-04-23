@@ -16,26 +16,36 @@ class TodoBloc extends Bloc<TodoEvent, TodoState> {
     on<FilterUpdated>(_onFilterUpdated);
     on<SortUpdated>(_onSortUpdated);
     on<TodoUpdated>(_onTodoUpdated);
+    on<SearchQueryChanged>(_onSearchQueryChanged);
   }
 
-// xử lý sự kiện lấy danh sách công việc
   Future<void> _onTodosFetched(
-    TodosFetched event,
-    Emitter<TodoState> emit,
-  ) async {
+      TodosFetched event,
+      Emitter<TodoState> emit,
+      ) async {
     String currentFilter = 'all';
     String currentSort = 'newest';
+    String currentSearchQuery = '';
     if (state is TodoLoadSuccess) {
-      currentFilter = (state as TodoLoadSuccess).filter;
-      currentSort = (state as TodoLoadSuccess).sort;
+      final successState = state as TodoLoadSuccess;
+      currentFilter = successState.filter;
+      currentSort = successState.sort;
+      currentSearchQuery = successState.searchQuery;
     }
 
-    emit(TodoLoadInProgress());
+    if (state is! TodoLoadInProgress) {
+      emit(TodoLoadInProgress());
+    }
+
     try {
       final userId = _supabaseClient.auth.currentUser?.id;
       if (userId == null) throw 'Người dùng chưa đăng nhập';
 
       var query = _supabaseClient.from('todos').select().eq('user_id', userId);
+
+      if (currentSearchQuery.trim().isNotEmpty) {
+        query = query.ilike('task', '%${currentSearchQuery.trim()}%');
+      }
 
       if (currentFilter == 'completed') {
         query = query.eq('status', 'completed');
@@ -50,25 +60,41 @@ class TodoBloc extends Bloc<TodoEvent, TodoState> {
       final response = await finalQuery;
 
       final todos =
-          (response as List).map((todo) => Todo.fromJson(todo)).toList();
+      (response as List).map((todo) => Todo.fromJson(todo)).toList();
 
       emit(TodoLoadSuccess(
-          todos: todos, filter: currentFilter, sort: currentSort));
+        todos: todos,
+        filter: currentFilter,
+        sort: currentSort,
+        searchQuery: currentSearchQuery,
+      ));
     } catch (e) {
+      print('Error fetching todos: $e');
       emit(TodoLoadFailure(error: e.toString()));
     }
   }
 
-  // --- Handler cho việc thêm Todo ---
+  Future<void> _onSearchQueryChanged(
+      SearchQueryChanged event,
+      Emitter<TodoState> emit,
+      ) async {
+    final currentState = state;
+    if (currentState is TodoLoadSuccess) {
+      emit(currentState.copyWith(searchQuery: event.query.trim()));
+      add(TodosFetched());
+    }
+  }
+
   Future<void> _onTodoAdded(TodoAdded event, Emitter<TodoState> emit) async {
     try {
       final userId = _supabaseClient.auth.currentUser?.id;
       if (userId == null) throw 'Người dùng chưa đăng nhập';
-      if (event.task.isEmpty) return;
+      final taskTrimmed = event.task.trim();
+      if (taskTrimmed.isEmpty) return;
 
       await _supabaseClient.from('todos').insert({
         'user_id': userId,
-        'task': event.task,
+        'task': taskTrimmed,
         'status': 'pending',
       });
       add(TodosFetched());
@@ -77,18 +103,22 @@ class TodoBloc extends Bloc<TodoEvent, TodoState> {
     }
   }
 
-  //Toggle
   Future<void> _onTodoToggled(
       TodoToggled event, Emitter<TodoState> emit) async {
     try {
       final userId = _supabaseClient.auth.currentUser?.id;
-      if (userId == null || userId != event.todo.userId) return;
+      if (userId == null || userId != event.todo.userId) {
+        print('Unauthorized toggle attempt or user not logged in.');
+        return;
+      };
 
       final newStatus =
-          event.todo.status == 'completed' ? 'pending' : 'completed';
+      event.todo.status == 'completed' ? 'pending' : 'completed';
       await _supabaseClient
           .from('todos')
-          .update({'status': newStatus}).eq('id', event.todo.id);
+          .update({'status': newStatus})
+          .eq('id', event.todo.id)
+          .eq('user_id', userId);
 
       add(TodosFetched());
     } catch (e) {
@@ -96,14 +126,17 @@ class TodoBloc extends Bloc<TodoEvent, TodoState> {
     }
   }
 
-//delete
   Future<void> _onTodoDeleted(
       TodoDeleted event, Emitter<TodoState> emit) async {
     try {
       final userId = _supabaseClient.auth.currentUser?.id;
       if (userId == null) return;
 
-      await _supabaseClient.from('todos').delete().eq('id', event.id);
+      await _supabaseClient
+          .from('todos')
+          .delete()
+          .eq('id', event.id)
+          .eq('user_id', userId);
 
       add(TodosFetched());
     } catch (e) {
@@ -111,7 +144,6 @@ class TodoBloc extends Bloc<TodoEvent, TodoState> {
     }
   }
 
-//Filter
   Future<void> _onFilterUpdated(
       FilterUpdated event, Emitter<TodoState> emit) async {
     final currentState = state;
@@ -123,7 +155,6 @@ class TodoBloc extends Bloc<TodoEvent, TodoState> {
     }
   }
 
-//Sort
   Future<void> _onSortUpdated(
       SortUpdated event, Emitter<TodoState> emit) async {
     final currentState = state;
@@ -135,7 +166,6 @@ class TodoBloc extends Bloc<TodoEvent, TodoState> {
     }
   }
 
-  //Update
   Future<void> _onTodoUpdated(
       TodoUpdated event,
       Emitter<TodoState> emit,
@@ -143,11 +173,12 @@ class TodoBloc extends Bloc<TodoEvent, TodoState> {
     try {
       final userId = _supabaseClient.auth.currentUser?.id;
       if (userId == null) return;
-      if (event.newTask.trim().isEmpty) return;
+      final newTaskTrimmed = event.newTask.trim();
+      if (newTaskTrimmed.isEmpty) return;
 
       await _supabaseClient
           .from('todos')
-          .update({'task': event.newTask.trim()})
+          .update({'task': newTaskTrimmed})
           .eq('id', event.id)
           .eq('user_id', userId);
 

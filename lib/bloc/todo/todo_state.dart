@@ -18,28 +18,32 @@ class TodoLoadSuccess extends TodoState {
   final List<Todo> todos;
   final String filter;
   final String sort;
+  final String searchQuery;
+
 
   const TodoLoadSuccess({
     this.todos = const [],
     this.filter = 'all',
     this.sort = 'newest',
+    this.searchQuery = '',
   });
 
-  // Phương thức tiện ích để tạo bản sao state với giá trị mới
   TodoLoadSuccess copyWith({
     List<Todo>? todos,
     String? filter,
     String? sort,
+    String? searchQuery,
   }) {
     return TodoLoadSuccess(
       todos: todos ?? this.todos,
       filter: filter ?? this.filter,
       sort: sort ?? this.sort,
+      searchQuery: searchQuery ?? this.searchQuery,
     );
   }
 
   @override
-  List<Object?> get props => [todos, filter, sort];
+  List<Object?> get props => [todos, filter, sort,searchQuery];
 }
 
 // Trạng thái tải/thao tác thất bại
